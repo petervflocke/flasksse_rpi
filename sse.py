@@ -48,18 +48,17 @@ Message = ""
 if param.RPI_Version is not None:
     import RPi.GPIO as GPIO
     from relay import Relay
-    global Relay
     RelayDev = Relay(param.R_PIN)
 
-global workernr
-workernr = 0
+#global workernr
+#workernr = 0
 
 def sse_worker():
     global Services
     global Message
-    global workernr
-    workernr += 1
-    workerlc = workernr
+    #global workernr
+    #workernr += 1
+    #workerlc = workernr
     t0 = time.time()
     tot = psutil.net_io_counters()
     
@@ -188,7 +187,7 @@ def action(ServiceId, action):
     ServiceName = Services[service]['name']
     # If the action part of the URL is "on," execute the code indented below:
     with sync:
-        if action == "on":
+        if action == "on": 
             # Set the service pin high:
             #GPIO.output(service, GPIO.HIGH)
             Services[service]['state'] = 99                 # wait for feedback from the service, do not chnage imediatelly
