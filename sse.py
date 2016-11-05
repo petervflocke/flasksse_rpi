@@ -109,17 +109,6 @@ for service in Services:
     sse_parm['LED_%s' % Services[service]['id']] = ''
     sse_parm['BUT_%s' % Services[service]['id']] = '' 
        
-            
-'''            
-            'LED_tvhead' : " ",
-            'BUT_tvhead' : " ",
-            'LED_oscam'  : " ",
-            'BUT_oscam'  : " ",
-            'LED_gpio3'  : " ",
-            'BUT_gpio3'  : " "                        
-            }
-'''       
-
 # name - text to be displayed
 # state - to be displayed as a LED 
 # newstate - new state after pressing change button - in some cases we need to wait for system feedback or whatsoever
@@ -137,7 +126,7 @@ def sse_worker():
     global sse_parm
     while True:
         yield 'data: ' + json.dumps(sse_parm) + '\n\n'                          # push to the page
-        gevent.sleep(1)                                                         # wait 1s for next check
+        gevent.sleep(0.5)                                                         # wait 1s for next check
 
 def param_worker():
     global Services
@@ -220,7 +209,6 @@ def param_worker():
 @app.route('/')
 def index():
     global Services
-    
     templateData = {
         'services' : Services
     }
@@ -261,9 +249,11 @@ def reboot():
         http_server.stop()
     return '<h1>... Server rebooting</h1>'
 
-@app.route('/stream/', methods=['GET', 'POST'])
+#@app.route('/stream/', methods=['GET', 'POST'])
+@app.route('/stream/')
 def stream():
     return Response(sse_worker(), mimetype="text/event-stream")
+    #return Response(sse_worker(), mimetype="{ 'content-type': 'text/event-stream', 'cache-control': 'no-cache', 'connection': 'keep-alive'}")
 
 def stop():
     print 'Handling signal TERM'

@@ -269,6 +269,7 @@
 <script>
 function listen() {
     var source = new EventSource("/stream/");
+    	
     source.onmessage = function(msg) {
       dic = JSON.parse(msg.data);
       for (var key in dic) {
