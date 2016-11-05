@@ -1,4 +1,3 @@
-from psutil import process_iter, version_info
 from subprocess import PIPE, Popen
 
 def get_cpu_temperature():
@@ -22,12 +21,6 @@ def bytes2human(n):
             value = float(n) / prefix[s]
             return '%.0f %s' % (value, s)
     return '%.02f B' % (n)
-
-def check_process(procname):
-    if version_info[0] < 4:
-        return procname in [p.name for p in process_iter()]
-    else:
-        return procname in [p.name() for p in process_iter()]
 
 if __name__ == '__main__':
     pass

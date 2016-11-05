@@ -7,14 +7,15 @@ monkey.patch_all()
 from flask import Flask, json, request, render_template, render_template_string, redirect, url_for, Response
 import time
 import signal
-from myutil import get_cpu_temperature, bytes2human, check_process
-import psutil
+from myutil import get_cpu_temperature, bytes2human
+from psutil import process_iter, version_info, net_io_counters, cpu_percent, virtual_memory, disk_usage
+if version_info[0] >= 4:
+    from psutil import boot_time            
 from datetime import datetime, timedelta
 from subprocess import PIPE, Popen
 import settings
-
 from gevent.coros import Semaphore
-global sync
+
 sync = Semaphore()
 
 import logging
@@ -32,54 +33,121 @@ global message              # optional message, actually not needed :) just as a
 
 param = settings.settings() # common & global System parameters
 
+if param.RPI_Version is not None:
+    import RPi.GPIO as GPIO
+    from relay import Relay
+    RelayDev = Relay(param.R_PIN)
+    
+def check_gpio(service, x):
+    if param.RPI_Version is not None:
+        return GPIO.input(Services[service]['pfun1'])==1
+    else: 
+        return False  
+        
+def process(service, action):
+    if action == 'off':
+        Services[service]['state'] = 99                   # wait for feedback from the service, do not chnage imediatelly
+        Services[service]['newstate'] = 0
+        
+        sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro']  
+        sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
+        
+        if service == 10:                               # TVHeadEnd 
+            if param.RPI_Version is not None:
+                RelayDev.RelayChange(0)                 # imediate change of the pin
+                Services[23]['state'] = 99              # change the status monitor for GPIO
+                Services[23]['newstate'] = 0
+        Popen(Services[service]['pfun4'], shell=True)      # and start the TVHeadOn service        
+    elif action == 'on':
+        Services[service]['state'] = 99                 # wait for feedback from the service, do not chnage imediatelly
+        Services[service]['newstate'] = 1        
+
+        sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro'] 
+        sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
+        
+        if service == 10:                               # TVHeadEnd 
+            if param.RPI_Version is not None:
+                RelayDev.RelayChange(1)                 # turn on power for usb
+                Services[23]['state'] = 99              # change the status monitor for GPIO
+                Services[23]['newstate'] = 1
+        Popen(Services[service]['pfun3'], shell=True)      # and start the TVHeadOn service
+    elif action == 'status':
+        if version_info[0] < 4:
+            return Services[service]['pfun1'] in [p.name for p in process_iter()]
+        else:
+            return Services[service]['pfun1'] in [p.name() for p in process_iter()]        
+    else: raise ValueError('Unknown action "%s"' % action)    
+    
 Services = {
-   10 : {'name' : 'TVHead',   'state' : 0, 'newstate' : 0, 'switch' : 1},
-   11 : {'name' : 'Oscam',    'state' : 1, 'newstate' : 1, 'switch' : 1},
-   23 : {'name' : 'GPIO 3',   'state' : 0, 'newstate' : 0, 'switch' : 1}
+    10 : {'name' : 'TVHead', 'fun' : process, 'pfun1' : 'tvheadend', 'pfun2' : None,   'pfun3' : '/usr/bin/sudo /etc/init.d/tvheadend start', 'pfun4' : '/usr/bin/sudo /etc/init.d/tvheadend stop',
+          'id' : 'tvhead', 'state' : 99, 'newstate' : 0, 'switch' : 1, 
+          'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>', 'boff' : '<a href="/10/on" class="myButton">Turn ON</a>', 'bpro' : '<div class="myButtonOff">Processing</div>'},
+    11 : {'name' : 'Oscam',  'fun' : process, 'pfun1' : 'oscam',     'pfun2' : None, 'pfun3' : '/usr/bin/sudo /etc/init.d/oscam start', 'pfun4' : '/usr/bin/sudo /etc/init.d/oscam stop',
+          'id' : 'oscam',  'state' : 99, 'newstate' : 0, 'switch' : 1,
+          'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '<a href="/11/off" class="myButton">Turn OFF</a>', 'boff' : '<a href="/11/on" class="myButton">Turn ON</a>', 'bpro' : '<div class="myButtonOff">Processing</div>'},
+    23 : {'name' : 'GPIO 3', 'fun' : check_gpio, 'pfun1' : 18,       'pfun2' : None, 'pfun3' : None, 'pfun4' : None,
+          'id' : 'gpio3',  'state' : 99, 'newstate' : 0, 'switch' : 0,
+          'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '', 'boff' : '', 'bpro' : '<div class="myButtonOff">Processing</div>'}
 }
+
+
+sse_parm = {               
+            'time'       : time.strftime("%H:%M:%S",time.gmtime()),
+            'date'       : time.strftime("%d.%m.%Y",time.gmtime()),
+            'uptime'     : "{:d}:{:0>2d}:{:0>2d}:{:0>2d}".format(0, 0, 0, 0),
+            'cpup'       : "{:3.0f}%".format(0),
+            'cput'       : "{:3.0f}*C".format(0),
+            'ramp'       : "{:3.0f}%".format(0),
+            'ramf'       : "{:>6s}".format(bytes2human(0)),
+            'hddp'       : "{:3.0f}%".format(0),
+            'hddf'       : "{:>6s}".format(bytes2human(0)),
+            'nets'       : "{:>8s}".format(bytes2human(0)), 
+            'netr'       : "{:>8s}".format(bytes2human(0))
+           }
+
+for service in Services:
+    sse_parm['LED_%s' % Services[service]['id']] = ''
+    sse_parm['BUT_%s' % Services[service]['id']] = '' 
+       
+            
+'''            
+            'LED_tvhead' : " ",
+            'BUT_tvhead' : " ",
+            'LED_oscam'  : " ",
+            'BUT_oscam'  : " ",
+            'LED_gpio3'  : " ",
+            'BUT_gpio3'  : " "                        
+            }
+'''       
 
 # name - text to be displayed
 # state - to be displayed as a LED 
 # newstate - new state after pressing change button - in some cases we need to wait for system feedback or whatsoever
 # switch - to show (1) or not (0) change button. For 0 only read only mode of a service
 
-Message = ""
-
 if param.RPI_Version is not None:
     import RPi.GPIO as GPIO
     from relay import Relay
     RelayDev = Relay(param.R_PIN)
-
+    
 #global workernr
 #workernr = 0
 
 def sse_worker():
+    global sse_parm
+    while True:
+        yield 'data: ' + json.dumps(sse_parm) + '\n\n'                          # push to the page
+        gevent.sleep(1)                                                         # wait 1s for next check
+
+def param_worker():
     global Services
-    global Message
-    #global workernr
+    global workernr
     #workernr += 1
     #workerlc = workernr
     t0 = time.time()
-    tot = psutil.net_io_counters()
-    
-    sse_parm = {'time'   : time.strftime("%H:%M:%S",time.gmtime()),
-                'date'   : time.strftime("%d.%m.%Y",time.gmtime()),
-                'uptime' : "{:d}:{:0>2d}:{:0>2d}:{:0>2d}".format(0, 0, 0, 0),
-                'cpup'   : "{:3.0f}%".format(0),
-                'cput'   : "{:3.0f}*C".format(0),
-                'ramp'   : "{:3.0f}%".format(0),
-                'ramf'   : "{:>6s}".format(bytes2human(0)),
-                'hddp'   : "{:3.0f}%".format(0),
-                'hddf'   : "{:>6s}".format(bytes2human(0)),
-                'nets'   : "{:>8s}".format(bytes2human(0)), 
-                'netr'   : "{:>8s}".format(bytes2human(0)),                    
-                'reload' : 0}       
+    tot = net_io_counters()
     while True:
-        reload_page = 0
-        
         #print 'WAITING {:d}'.format(workerlc)
-        #sync.wait()
-        #sync.acquire()
         with sync:
             #print 'LOCK {:d}'.format(workerlc)
             
@@ -87,28 +155,31 @@ def sse_worker():
             # this concept requires however all remote processes to indicate their changes via respective http request to the flas http server
             # in order to emulate "user click" on the respective web site 
             for s in Services:
-                if Services[s]['state'] == 99:                                      # there was a change of service status - check the status
-                    ServiceStat = None
-                    if s == 10:
-                        ServiceStat=check_process(param.TVProcname)                 # check the TVhead status
-                    elif s == 11:
-                        ServiceStat=check_process(param.OscamProcname)              # check the Oscam service
-                    elif (s == 23) and (param.RPI_Version is not None):             # actually the change can be imediate but let's pretend it takes time and wait for the feedback
-                        ServiceStat = (GPIO.input(param.R_PIN)==1)
-                    if ServiceStat:                                                 # service is now running
-                        if (Services[s]['newstate'] == 1):                          # the new 'desired' status was expect to be up and running/1
-                            Services[s]['state'] = 1                                # make the new status the current status
-                            reload_page = 1                                         # force page to reload
-                    else:                                                           # service is not up and running
-                        if (Services[s]['newstate'] == 0):                          # and it was expected not to be running
-                            Services[s]['state'] = 0                                # make the not running status the current status
-                            reload_page = 1                                         # and force page to reload
-                            if s == 10:                                             # the tvhead service is down now and we can swithc the power for usb tuner
-                                RelayDev.RelayChange(0)                             # the GPIO will change and in the next run update the page
-    
-            #print 'UNLOCK {:d}'.format(workerlc)
-        #sync.release()
-              
+                task  = Services[s]['fun']
+                ServiceStat = task(s, 'status')
+                if Services[s]['state'] == 99:                                           # there was a change of service status - check the status
+                    if ServiceStat:                                                      # service is now running
+                        if (Services[s]['newstate'] == 1):                               # the new 'desired' status was expected to be up and running/1
+                            Services[s]['state'] = 1                                     # make the new status the current status
+                            sse_parm['LED_%s' % Services[s]['id']] = Services[s]['lon']  # turn the led on
+                            sse_parm['BUT_%s' % Services[s]['id']] = Services[s]['bon']  # show the OFF button 
+                    else:                                                                # service is not up and running
+                        if (Services[s]['newstate'] == 0):                               # and it was expected not to be running
+                            Services[s]['state'] = 0                                     # make the not running status the current status
+                            sse_parm['LED_%s' % Services[s]['id']] = Services[s]['loff'] # turn the led off
+                            sse_parm['BUT_%s' % Services[s]['id']] = Services[s]['boff'] # show the ON button 
+                else:                                                                    # check service status if not chnage from the external processes
+                    if ServiceStat:                                                      # Service is "on"
+                        if Services[s]['state'] == 0:                                    # but the web things is off - so change it to ON
+                            Services[s]['state'] = 1
+                            sse_parm['LED_%s' % Services[s]['id']] = Services[s]['lon'] 
+                            sse_parm['BUT_%s' % Services[s]['id']] = Services[s]['bon']
+                    else:                                                                # Service is Off 
+                        if Services[s]['state'] == 1:                                    # but here it is On, change it accordingly
+                            Services[s]['state'] = 0
+                            sse_parm['LED_%s' % Services[s]['id']] = Services[s]['loff'] # turn the led off
+                            sse_parm['BUT_%s' % Services[s]['id']] = Services[s]['boff'] # show the ON button
+                                
         if time.time() - t0 > 4:
             t1 = time.time()
             
@@ -117,7 +188,7 @@ def sse_worker():
             else:
                 cpu_temperature = 0.0
 
-            net = psutil.net_io_counters()
+            net = net_io_counters()
             cur_sent = ((net.bytes_sent - tot.bytes_sent) / (t1-t0)) 
             cur_recv = ((net.bytes_recv - tot.bytes_recv) / (t1-t0)) 
             t0 = t1
@@ -126,53 +197,31 @@ def sse_worker():
             sse_parm['time']   = time.strftime("%H:%M:%S",time.gmtime())
             sse_parm['date']   = time.strftime("%d.%m.%Y",time.gmtime())
             sse_parm['uptime'] = "{:d}:{:0>2d}:{:0>2d}:{:0>2d}".format(uptime.day-1, uptime.hour, uptime.minute, uptime.second)
-            sse_parm['cpup']   = "{:3.0f}%".format(psutil.cpu_percent())
+            sse_parm['cpup']   = "{:3.0f}%".format(cpu_percent())
             sse_parm['cput']   = "{:3.0f}*C".format(cpu_temperature)
-            sse_parm['ramp']   = "{:3.0f}%".format(psutil.virtual_memory().percent)
-            sse_parm['ramf']   = "{:>6s}".format(bytes2human(psutil.virtual_memory().free))
-            sse_parm['hddp']   = "{:3.0f}%".format(psutil.disk_usage('/').percent)
-            sse_parm['hddf']   = "{:>6s}".format(bytes2human(psutil.disk_usage('/').free))
+            sse_parm['ramp']   = "{:3.0f}%".format(virtual_memory().percent)
+            sse_parm['ramf']   = "{:>6s}".format(bytes2human(virtual_memory().free))
+            sse_parm['hddp']   = "{:3.0f}%".format(disk_usage('/').percent)
+            sse_parm['hddf']   = "{:>6s}".format(bytes2human(disk_usage('/').free))
             sse_parm['nets']   = "{:>8s}".format(bytes2human(cur_sent))
             sse_parm['netr']   = "{:>8s}".format(bytes2human(cur_recv))                    
-            sse_parm['reload'] = reload_page                                     # update all server side parameters
 
-        if psutil.version_info[0] >= 4:                                         # boot_time not available in ubuntu 1.2.1 psutil version
-            uptime = datetime(1,1,1) + timedelta(seconds=int(time.time()-psutil.boot_time()))
+        if version_info[0] >= 4:                                         # boot_time not available in ubuntu 1.2.1 psutil version
+            uptime = datetime(1,1,1) + timedelta(seconds=int(time.time()-boot_time()))
         else:
             uptime = datetime(1,1,1) + timedelta(seconds=int(time.time()))      # find other way to calculate or leave it as a test only 
         sse_parm['time']   = time.strftime("%H:%M:%S",time.gmtime())
         sse_parm['date']   = time.strftime("%d.%m.%Y",time.gmtime())
         sse_parm['uptime'] = "{:d}:{:0>2d}:{:0>2d}:{:0>2d}".format(uptime.day-1, uptime.hour, uptime.minute, uptime.second)
-        sse_parm['reload'] = reload_page                                        # update all server side parameters
         
-        yield 'data: ' + json.dumps(sse_parm) + '\n\n'                          # push to the page
         gevent.sleep(1)                                                         # wait 1s for next check
-
 
 
 @app.route('/')
 def index():
     global Services
-    global Message
-    global NeedReload
-    with sync:
-        for s in Services:
-            if Services[s]['state'] != 99:                                      # update service status            
-                ServiceStat = None
-                if s == 10:
-                    ServiceStat=check_process(param.TVProcname)                 # check the TVhead status
-                elif s == 11:
-                    ServiceStat=check_process(param.OscamProcname)              # check the Oscam service
-                elif (s == 23) and (param.RPI_Version is not None):             # actually the change can be imediate but let's pretend it takes time and wait for the feedback
-                    ServiceStat = GPIO.input(param.R_PIN)
-                if ServiceStat:                                                 # service is now running
-                    Services[s]['newstate'] = 1                                 # the new 'desired' status was expect to be up and running/1
-                    Services[s]['state'] = 1                                    # make the new status the current status
-                else:                                                           # service is not up and running
-                    Services[s]['newstate'] = 0                                 # and it was expected not to be running
-                    Services[s]['state'] = 0                                    # make the not running status the current status
+    
     templateData = {
-        'message'  : Message,
         'services' : Services
     }
     return render_template('index.html', **templateData)
@@ -180,51 +229,19 @@ def index():
 @app.route("/<ServiceId>/<action>")
 def action(ServiceId, action):
     global Services
-    global Message    
     # Convert the ServiceId from the URL into an integer:
     service = int(ServiceId)
+    # to do validate service numbers and action based on Service dictionary
     # Get the device name for the pin being changed:
-    ServiceName = Services[service]['name']
     # If the action part of the URL is "on," execute the code indented below:
-    with sync:
-        if action == "on": 
-            # Set the service pin high:
-            #GPIO.output(service, GPIO.HIGH)
-            Services[service]['state'] = 99                 # wait for feedback from the service, do not chnage imediatelly
-            Services[service]['newstate'] = 1
-            if service == 10:                               # TVHeadEnd 
-                if param.RPI_Version is not None:
-                    RelayDev.RelayChange(1)                 # turn on power for usb
-                    Services[23]['state'] = 99              # change the status monitor for GPIO
-                    Services[23]['newstate'] = 1
-                Popen(param.TVDaemonStart, shell=True)      # and start the TVHeadOn service
-            elif service == 23:
-                if param.RPI_Version is not None:
-                    RelayDev.RelayChange(1)                 # imediate change of the pin 
-                    Services[23]['state'] = 1               # change the status monitor for GPIO
-                    Services[23]['newstate'] = 1
-            Message = "Changing " + ServiceName + " to on."
-        if action == "off":
-            Services[service]['state'] = 99                   # wait for feedback from the service, do not chnage imediatelly
-            Services[service]['newstate'] = 0
-            if service == 10:                               # TVHeadEnd 
-                if param.RPI_Version is not None:
-                    #RelayDev.RelayChange(1)                # turn off power for usb but not now, wait until deamon stops
-                    Services[23]['state'] = 99              # change the status monitor for GPIO
-                    Services[23]['newstate'] = 0
-                Popen(param.TVDaemonStop, shell=True)      # and start the TVHeadOn service        
-            elif service == 23:
-                if param.RPI_Version is not None:
-                    RelayDev.RelayChange(0)                 # imediate change of the pin 
-                    Services[23]['state'] = 0               # change the status monitor for GPIO
-                    Services[23]['newstate'] = 0
-            Message = "Changing " + ServiceName + " to off."
-
+    # Set the service pin high:
+    #GPIO.output(service, GPIO.HIGH)
+    task = Services[service]['fun']
+    task(service, action)
+    print "Service {:2d} {:s}".format(service, action)
     templateData = {
-        'message'  : Message,
         'services' : Services
    }
-
     #return render_template('index.html', **templateData)
     return redirect('/')
 
@@ -255,7 +272,23 @@ def stop():
     sys.exit(signal.SIGTERM) 
 
 if __name__ == "__main__":
+    
+    # Initial check of the services and setup main dictionary Services accordingly
+    for s in Services:
+        task  = Services[s]['fun']
+        ServiceStat = task(s, 'status')
+        if ServiceStat:                                                  # service is now running
+            Services[s]['state'] = 1                                     # wait for feedback from the service, do not chnage imediatelly
+            sse_parm['LED_%s' % Services[s]['id']] = Services[s]['lon']  # turn the led on
+            sse_parm['BUT_%s' % Services[s]['id']] = Services[s]['bon']  # show the OFF button 
+        else:                                                            # service is not up and running
+            Services[s]['state'] = 0                                     # wait for feedback from the service, do not chnage imediatelly
+            sse_parm['LED_%s' % Services[s]['id']] = Services[s]['loff'] # turn the led off
+            sse_parm['BUT_%s' % Services[s]['id']] = Services[s]['boff'] # show the ON button     
+   
+    
     gevent.signal(signal.SIGTERM, stop)
+    gevent.spawn(param_worker)
     http_server = WSGIServer(('', 5000), app)
     http_server.serve_forever()
 

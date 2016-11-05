@@ -204,36 +204,18 @@
       </div>
 {% for s in services %}
       <div class="divTableRow">
-        <div class="divTableCell1">{{ services[s].name }} | {{ services[s].state }}</div>
+        <div class="divTableCell1">{{ services[s].name }}</div>
         <div class="divTableCell2">
-          <div class="led-box">
-  {% if services[s].state == 1 %}
-            <div class="led-green">ON</div>
+          <div id="LED_{{ services[s].id }}" class="led-box">
+            <div class="spinner"></div>
           </div>
         </div>
     {% if services[s].switch == 1 %}
-        <div class="divTableCell3"><a id="bt{{s}}" href="/{{s}}/off" class="myButton">Turn OFF</a></div>
+        <div id="BUT_{{ services[s].id }}" class="divTableCell3"><div class="myButtonOff">Processing</div></div>
     {% else %}
-        <div class="divTableCell3">-</div>
+        <div id="BUT_None" class="divTableCell3">-</div>
     {% endif %}
       </div>
-  {% elif services[s].state == 0 %}
-            <div class="led-red">OFF</div>
-          </div>
-        </div>
-    {% if services[s].switch == 1 %}
-        <div class="divTableCell3"><a id="bt{{s}}" href="/{{s}}/on" class="myButton">Turn ON</a></div>
-    {% else %}
-        <div class="divTableCell3">[read only]</div>
-    {% endif %}
-      </div>
-  {% else %}
-           <div class="spinner"></div>
-         </div>
-       </div>
-       <div class="divTableCell3"><div class="myButtonOff">Processing</div></div>
-     </div>
-  {% endif %}
 {% endfor %}
     </div>
   </div>
@@ -280,43 +262,23 @@
   </div>
 
   <br><br><br><br><a href="/" class="myButton">Refresh</a>
-  <br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br><a href="/reboot" class="myButton">.:Reboot RPI:.</a><br><br>
+  <br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br><a href="/reboot" class="myButton">Reboot</a><br><br>
 
 </div>
 
 <script>
-    function listen() {
-        var source = new EventSource("/stream/");
-        var target1 = document.getElementById("time");
-        var target2 = document.getElementById("date");
-        var target3 = document.getElementById("uptime");
-        var target4 = document.getElementById("cpup");
-        var target5 = document.getElementById("cput");
-        var target6 = document.getElementById("ramp");        
-        var target7 = document.getElementById("ramf");
-        var target8 = document.getElementById("hddp");
-        var target9 = document.getElementById("hddf");
-        var target10 = document.getElementById("nets");
-        var target11 = document.getElementById("netr");        
-        source.onmessage = function(msg) {
-          obj = JSON.parse(msg.data);
-          // target1.innerHTML = msg.data;
-          target1.innerHTML = obj.time;
-          target2.innerHTML = obj.date;
-          target3.innerHTML = obj.uptime;
-          target4.innerHTML = obj.cpup;
-          target5.innerHTML = obj.cput;
-          target6.innerHTML = obj.ramp;
-          target7.innerHTML = obj.ramf;
-          target8.innerHTML = obj.hddp;
-          target9.innerHTML = obj.hddf;
-          target10.innerHTML = obj.nets;
-          target11.innerHTML = obj.netr;
-          if (obj.reload == "1") {
-            location.reload();
+function listen() {
+    var source = new EventSource("/stream/");
+    source.onmessage = function(msg) {
+      dic = JSON.parse(msg.data);
+      for (var key in dic) {
+          var target = document.getElementById(key);
+          if (target != undefined) {
+            target.innerHTML = dic[key];
           }
-        }
+      }
     }
+}
     listen();
 </script>
 
