@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="#refresh#" content="4">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<title>Server Status</title>
+<style>
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  margin: auto;
+  background-color: #333;
+
+  border-radius: 100%;
+  -webkit-animation: sk-scaleout 1.0s infinite ease-in-out;
+  animation: sk-scaleout 1.0s infinite ease-in-out;
+}
+
+@-webkit-keyframes sk-scaleout {
+  0% { -webkit-transform: scale(0) }
+  100% {
+    -webkit-transform: scale(1.0);
+    opacity: 0;
+  }
+}
+
+@keyframes sk-scaleout {
+  0% {
+    -webkit-transform: scale(0);
+    transform: scale(0);
+  } 100% {
+    -webkit-transform: scale(1.0);
+    transform: scale(1.0);
+    opacity: 0;
+  }
+}
+
+
+.myButton {
+  width: 80%;
+  -webkit-border-radius: 27;
+  -moz-border-radius: 27;
+  border-radius: 27px;
+  font-family: Arial;
+  color: #ffffff;
+  background: #9e9e9e;
+  padding: 10px 20px 10px 20px;
+  text-decoration: none;
+  display:inline-block;
+	cursor:pointer;
+	font-family:Arial;
+	font-size:50px;
+	font-weight:bold;
+	padding:6px 24px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #ffffff;
+  text-align: center;
+}
+.myButton:hover {
+	background: #8a8a8a;
+	text-decoration: none;
+}
+.myButton:active {
+	position:relative;
+	top: 4px;
+	left: 4px;
+	box-shadow: inset 10px 10px 15px 5px #525252;
+ }
+
+.myButtonOff {
+  width: 80%;
+  -webkit-border-radius: 27;
+  -moz-border-radius: 27;
+  border-radius: 27px;
+  font-family: Arial;
+  color: #ffffff;
+  background: #5c5c5c;
+  padding: 10px 20px 10px 20px;
+  text-decoration: none;
+  display:inline-block;
+	cursor:pointer;
+	font-family:Arial;
+	font-size:50px;
+	font-weight:bold;
+	padding:6px 24px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #ffffff;
+  text-align: center;
+}
+
+
+.led-box {
+  margin: 0 auto;
+  width: 60px;
+  height: 60px;
+  font-family:Arial;
+  line-height:60px;
+  text-align:center;
+  text-decoration:none;
+  font-size:25px;
+  font-weight:bold;
+}
+
+.led-green {
+  background-color: #ABFF00;
+  border-radius: 50%;
+  #box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset #304701 0 -1px 9px, #89FF00 0 2px 12px;
+   box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset #304701 0 -1px 9px, #89FF00 0 2px 12px;
+}
+
+.led-red {
+  background-color: #F00;
+  border-radius: 50%;
+  box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset #441313 0 -1px 9px, rgba(255, 0, 0, 0.5) 0 2px 12px;
+ }
+
+/* DivTable.com */
+.divTable{
+	display: table;
+	width: 100%;
+  border-collapse: collapse;
+}
+.divTableRow {
+	display: table-row;
+  border-bottom: 1px solid #ddd;
+}
+.divTableHeading {
+	background-color: #EEE;
+	display: table-header-group;
+}
+.divTableHead {
+	display: table-cell;
+  height: 10px;
+}
+.divTableCell1 {
+	#border: 1px solid #999999;
+  display: table-cell;
+	padding: 10px;
+  font-family:Arial;
+	font-size:50px;
+	font-weight:bold;
+  text-align: right;
+  vertical-align:middle;
+  height: 100px;
+  width: 40%
+}
+.divTableCell2 {
+	#border: 1px solid #999999;
+	display: table-cell;
+  vertical-align:middle;
+  width: 10%;  
+
+}
+.divTableCell3 {
+	#border: 1px solid #999999;
+  display: table-cell;
+	padding: 10px;
+  vertical-align:middle;
+  text-align: left;
+  width: 50%
+}
+
+.divTableCell4 {
+	#border: 1px solid #999999;
+  display: table-cell;
+	padding: 0px;
+  font-family:Arial;
+	font-size:40px;
+	font-weight:bold;
+  text-align: left;
+  vertical-align:middle;
+  height: 100px;
+  width: 25%
+}
+
+
+.divTableBody {
+	display: table-row-group;
+}
+
+.center {
+    text-align: center;
+    padding: 10px 20px;
+    border: 2px solid grey;
+}
+
+
+</style>
+</head>
+<body>
+
+<div class="center">
+  <div class="divTable">
+    <div class="divTableBody">
+      <div class="divTableRow">
+        <div class="divTableHead"></div>
+        <div class="divTableHead"></div>
+        <div class="divTableHead"></div>
+      </div>
+{% for s in services %}
+      <div class="divTableRow">
+        <div class="divTableCell1">{{ services[s].name }}</div>
+        <div class="divTableCell2">
+          <div id="LED_{{ services[s].id }}" class="led-box">
+            <div class="spinner"></div>
+          </div>
+        </div>
+    {% if services[s].switch == 1 %}
+        <div id="BUT_{{ services[s].id }}" class="divTableCell3"><div class="myButtonOff">Processing</div></div>
+    {% else %}
+        <div id="BUT_None" class="divTableCell3">-</div>
+    {% endif %}
+      </div>
+{% endfor %}
+    </div>
+  </div>
+
+  <div class="divTable">
+    <div class="divTableBody">
+      <div class="divTableRow">
+        <div class="divTableCell1">Time, Date</div>
+        <div class="divTableCell2">:</div>
+        <div class="divTableCell4"><div id="time"></div></div>
+        <div class="divTableCell4"><div id="date"></div></div>
+      </div>
+      <div class="divTableRow">
+        <div class="divTableCell1">Uptime</div>
+        <div class="divTableCell2">:</div>
+        <div class="divTableCell4"><div id="uptime"></div></div>
+        <div class="divTableCell4"></div>        
+      </div>
+      <div class="divTableRow">
+        <div class="divTableCell1">CPU, Temp</div>
+        <div class="divTableCell2">:</div>
+        <div class="divTableCell4"><div id="cpup"></div></div>
+        <div class="divTableCell4"><div id="cput"></div></div>
+      </div>
+      <div class="divTableRow">
+        <div class="divTableCell1">Free RAM</div>
+        <div class="divTableCell2">:</div>
+        <div class="divTableCell4"><div id="ramp"></div></div>
+        <div class="divTableCell4"><div id="ramf"></div></div>
+      </div>
+      <div class="divTableRow">
+        <div class="divTableCell1">Free HDD</div>
+        <div class="divTableCell2">:</div>
+        <div class="divTableCell4"><div id="hddp"></div></div>
+        <div class="divTableCell4"><div id="hddf"></div></div>
+      </div>
+      <div class="divTableRow">
+        <div class="divTableCell1">NET Sn, Re</div>
+        <div class="divTableCell2">:</div>
+        <div class="divTableCell4"><div id="nets"></div></div>
+        <div class="divTableCell4"><div id="netr"></div></div>
+      </div>                  
+    </div>
+  </div>
+
+  <br><br><br><br><a href="/" class="myButton">Refresh</a>
+  <br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br>.<br><a href="/reboot" class="myButton">Reboot</a><br><br>
+
+</div>
+
+<script>
+function listen() {
+    var source = new EventSource("/stream/");
+    	
+    source.onmessage = function(msg) {
+      dic = JSON.parse(msg.data);
+      for (var key in dic) {
+          var target = document.getElementById(key);
+          if (target != undefined) {
+            target.innerHTML = dic[key];
+          }
+      }
+    }
+}
+    listen();
+</script>
+
+</body>
+</html>
+</body>
+</html>
