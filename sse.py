@@ -38,45 +38,48 @@ if param.RPI_Version is not None:
     RelayDev = Relay(param.R_PIN)
     
 def check_gpio(service, x):
+    global Services
     if param.RPI_Version is not None:
         return GPIO.input(Services[service]['pfun1'])==1
     else: 
         return False  
         
 def process(service, action):
-    with sync:
-        if action == 'off':
-            Services[service]['state'] = 99                   # wait for feedback from the service, do not chnage imediatelly
-            Services[service]['newstate'] = 0
-            
-            sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro']  
-            sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
-            
-            if service == 10:                               # TVHeadEnd 
-                if param.RPI_Version is not None:
-                    RelayDev.RelayChange(0)                 # imediate change of the pin
-                    Services[23]['state'] = 99              # change the status monitor for GPIO
-                    Services[23]['newstate'] = 0
-            Popen(Services[service]['pfun4'], shell=True)      # and start the TVHeadOn service        
-        elif action == 'on':
-            Services[service]['state'] = 99                    # wait for feedback from the service, do not change immediately
-            Services[service]['newstate'] = 1        
-    
-            sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro'] 
-            sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
-            
-            if service == 10:                               # TVHeadEnd 
-                if param.RPI_Version is not None:
-                    RelayDev.RelayChange(1)                 # turn on power for usb
-                    Services[23]['state'] = 99              # change the status monitor for GPIO
-                    Services[23]['newstate'] = 1
-            Popen(Services[service]['pfun3'], shell=True)      # and start the TVHeadOn service
-        elif action == 'status':
-            if version_info[0] < 4:
-                return Services[service]['pfun1'] in [p.name for p in process_iter()]
-            else:
-                return Services[service]['pfun1'] in [p.name() for p in process_iter()]        
-        else: raise ValueError('Unknown action "%s"' % action)    
+    global Services
+    global sse_parm    
+    #with sync:
+    if action == 'off':
+        Services[service]['state'] = 99                   # wait for feedback from the service, do not change immediately
+        Services[service]['newstate'] = 0
+        
+        sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro']  
+        sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
+        
+        if service == 10:                               # TVHeadEnd 
+            if param.RPI_Version is not None:
+                RelayDev.RelayChange(0)                 # immediately change of the pin
+                Services[23]['state'] = 99              # change the status monitor for GPIO
+                Services[23]['newstate'] = 0
+        Popen(Services[service]['pfun4'], shell=True)      # and start the TVHeadOn service        
+    elif action == 'on':
+        Services[service]['state'] = 99                    # wait for feedback from the service, do not change immediately
+        Services[service]['newstate'] = 1        
+
+        sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro'] 
+        sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
+        
+        if service == 10:                               # TVHeadEnd 
+            if param.RPI_Version is not None:
+                RelayDev.RelayChange(1)                 # turn on power for usb
+                Services[23]['state'] = 99              # change the status monitor for GPIO
+                Services[23]['newstate'] = 1
+        Popen(Services[service]['pfun3'], shell=True)      # and start the TVHeadOn service
+    elif action == 'status':
+        if version_info[0] < 4:
+            return Services[service]['pfun1'] in [p.name for p in process_iter()]
+        else:
+            return Services[service]['pfun1'] in [p.name() for p in process_iter()]        
+    else: raise ValueError('Unknown action "%s"' % action)    
     
 Services = {
     10 : {'name' : 'TVHead', 'fun' : process, 'pfun1' : 'tvheadend', 'pfun2' : None,   'pfun3' : '/usr/bin/sudo /etc/init.d/tvheadend start', 'pfun4' : '/usr/bin/sudo /etc/init.d/tvheadend stop',
@@ -85,8 +88,8 @@ Services = {
     11 : {'name' : 'Oscam',  'fun' : process, 'pfun1' : 'oscam',     'pfun2' : None, 'pfun3' : '/usr/bin/sudo /etc/init.d/oscam start', 'pfun4' : '/usr/bin/sudo /etc/init.d/oscam stop',
           'id' : 'oscam',  'state' : 99, 'newstate' : 0, 'switch' : 1,
           'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '<a href="/11/off" class="myButton">Turn OFF</a>', 'boff' : '<a href="/11/on" class="myButton">Turn ON</a>', 'bpro' : '<div class="myButtonOff">Processing</div>'},
-    23 : {'name' : 'GPIO 3', 'fun' : check_gpio, 'pfun1' : 18,       'pfun2' : None, 'pfun3' : None, 'pfun4' : None,
-          'id' : 'gpio3',  'state' : 99, 'newstate' : 0, 'switch' : 0,
+    23 : {'name' : 'GPIO 1', 'fun' : check_gpio, 'pfun1' : 18,       'pfun2' : None, 'pfun3' : None, 'pfun4' : None,
+          'id' : 'gpio1',  'state' : 99, 'newstate' : 0, 'switch' : 0,
           'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '', 'boff' : '', 'bpro' : '<div class="myButtonOff">Processing</div>'}
 }
 
@@ -114,11 +117,6 @@ for service in Services:
 # newstate - new state after pressing change button - in some cases we need to wait for system feedback or whatsoever
 # switch - to show (1) or not (0) change button. For 0 only read only mode of a service
 
-if param.RPI_Version is not None:
-    import RPi.GPIO as GPIO
-    from relay import Relay
-    RelayDev = Relay(param.R_PIN)
-    
 def sse_worker():
     global sse_parm
     while True:
@@ -127,9 +125,7 @@ def sse_worker():
 
 def param_worker():
     global Services
-    global workernr
-    #workernr += 1
-    #workerlc = workernr
+    global sse_parm
     t0 = time.time()
     tot = net_io_counters()
     while True:
@@ -209,18 +205,14 @@ def index():
 @app.route("/<ServiceId>/<action>")
 def action(ServiceId, action):
     global Services
+    # to do validate service numbers and action based on Service dictionary
     # Convert the ServiceId from the URL into an integer:
     service = int(ServiceId)
-    # to do validate service numbers and action based on Service dictionary
-    # Get the device name for the pin being changed:
-    # If the action part of the URL is "on," execute the code indented below:
-    # Set the service pin high:
-    #GPIO.output(service, GPIO.HIGH)
     task = Services[service]['fun']
     task(service, action)
-    templateData = {
-        'services' : Services
-   }
+#    templateData = {
+#        'services' : Services
+#   }
     #return render_template('index.html', **templateData)
     return redirect('/')
 

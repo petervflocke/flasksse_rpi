@@ -1,7 +1,4 @@
-import logging
 import os 
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class settings(object):
     
@@ -10,10 +7,6 @@ class settings(object):
         # define 3 pins A/B + switch in BCM GPIO mode for the rotary encoder A/B Pin + Switch   
        
         self.RPI_Version = self.pi_version()        
-        
-        self.A_PIN  = 17 #wiring=0
-        self.B_PIN  = 27 #wiring=2
-        self.SW_PIN = 22 #wiring=3
         
         self.R_PIN  = 18 # wiring=1, relay to power external device
         

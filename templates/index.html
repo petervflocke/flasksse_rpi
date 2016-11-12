@@ -207,14 +207,28 @@
         <div class="divTableCell1">{{ services[s].name }}</div>
         <div class="divTableCell2">
           <div id="LED_{{ services[s].id }}" class="led-box">
-            <div class="spinner"></div>
+			  {% if services[s].state == 1 %}          
+	  				<div class="led-green">ON</div>
+	  		  {% elif services[s].state == 0 %}
+					<div class="led-red">OFF</div>          
+	  		  {% else %}
+	               <div class="spinner"></div>  
+	  		  {% endif %}
           </div>
         </div>
-    {% if services[s].switch == 1 %}
-        <div id="BUT_{{ services[s].id }}" class="divTableCell3"><div class="myButtonOff">Processing</div></div>
-    {% else %}
-        <div id="BUT_None" class="divTableCell3">-</div>
-    {% endif %}
+		{% if services[s].switch == 1 %}
+		  <div id="BUT_{{ services[s].id }}" class="divTableCell3">
+			  {% if services[s].state == 1 %}          
+	  				<a id="bt{{s}}" href="/{{s}}/off" class="myButton">Turn OFF</a>      
+	  		  {% elif services[s].state == 0 %}
+					<a id="bt{{s}}" href="/{{s}}/on" class="myButton">Turn ON</a>          
+	  		  {% else %}
+	               <div class="myButtonOff">Processing</div>  
+	  		  {% endif %}      
+          </div>
+    	{% else %}
+          <div id="BUT_None" class="divTableCell3">&nbsp;</div>
+    	{% endif %}
       </div>
 {% endfor %}
     </div>
