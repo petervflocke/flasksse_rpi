@@ -43,17 +43,17 @@ def check_gpio(service, x):
 
 def set_gpio(service, action):
     if action == 'off':
-        Services[service]['state'] = 0                   # wait for feedback from the service, do not change immediately
+        Services[service]['state'] = 0                   # do not wait for feedback from the service, change cab be done immediately
         Services[service]['newstate'] = 0
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['loff']  
         sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bon']          
         GPIO.output(Services[service]['pfun1'], 0)        
     elif action == 'on':
-        Services[service]['state'] = 1                    # wait for feedback from the service, do not change immediately
+        Services[service]['state'] = 1                    # do not wait for feedback from the service, change cab be done immediately
         Services[service]['newstate'] = 1        
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lon'] 
         sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['boff']          
-        GPIO.output(Services[service]['pfun1'], 0)
+        GPIO.output(Services[service]['pfun1'], 1)
     else: raise ValueError('Unknown action "%s"' % action)    
 
 def process(service, action):
@@ -80,20 +80,89 @@ def process(service, action):
             return Services[service]['pfun1'] in [p.name() for p in process_iter()]        
     else: raise ValueError('Unknown action "%s"' % action)  
 
-  
+'''
 Services = {
-    10 : {'name' : 'Proc ABC', 'fun' : process, 'pfun1' : 'abc', 'pfun2' : None,   'pfun3' : '/usr/bin/sudo /etc/init.d/abc start', 'pfun4' : '/usr/bin/sudo /etc/init.d/abc stop',
-          'id' : 'gpio0', 'state' : 99, 'newstate' : 0, 'switch' : 1, 
+    10: {'name' : 'TVHead', 'fun' : process, 'pfun1' : 'tvheadend', 'pfun2' : None,   'pfun3' : '/usr/bin/sudo /etc/init.d/tvheadend start', 'pfun4' : '/usr/bin/sudo /etc/init.d/tvheadend stop',
+          'id' : 'tvhead', 'state' : 99, 'newstate' : 0, 'switch' : 1, 
           'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>', 'boff' : '<a href="/10/on" class="myButton">Turn ON</a>', 'bpro' : '<div class="myButtonOff">Processing</div>'},
-    11 : {'name' : 'GPIO1',  'fun' : set_gpio, 'pfun1' : B_PIN,     'pfun2' : None,   'pfun3' : None, 'pfun4' : None,
-          'id' : 'gpio1',  'state' : 99, 'newstate' : 0, 'switch' : 1,
-          'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '<a href="/11/off" class="myButton">Turn OFF</a>', 'boff' : '<a href="/11/on" class="myButton">Turn ON</a>', 'bpro' : '<div class="myButtonOff">Processing</div>'},
-    12 : {'name' : 'GPIO 3', 'fun' : check_gpio, 'pfun1' : C_PIN,  'pfun2' : None, 'pfun3' : None, 'pfun4' : None,
-          'id' : 'gpio3',  'state' : 99, 'newstate' : 0, 'switch' : 0,
-          'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '', 'boff' : '', 'bpro' : '<div class="myButtonOff">Processing</div>'}
+    
+    10:                                                         # service ID number (int)
+    {'name' : 'TVHead',                                         # name to be displayed 
+     'fun' : process,                                           # name of the function to pro 
+     'pfun1' : 'tvheadend',                                     # 1st parameter for the 'fun' function
+     'pfun2' : None,                                            # 2nd parameter for the 'fun' function
+     'pfun3' : '/usr/bin/sudo /etc/init.d/tvheadend start',     # 3rd parameter here used an external command start the service
+     'pfun4' : '/usr/bin/sudo /etc/init.d/tvheadend stop',      # 4th parameter here used an external command stop the service
+     'id' : 'tvhead',                                           # name of the html id to be incorporated into the index.html template
+     'state' : 99,                                              # current status of the service 99 means unknown
+     'newstate' : 0,                                            # new desired status of the given service
+     'switch' : 1,                                              # 1 means display the button to change the service status, 0 just display the service status (no change from this app     
+     'lon' : '<div class="led-green">ON</div>',                 # HTML to display green (ON) LED
+     'loff' : '<div class="led-red">OFF</div>',                 # HTML to display red (OFF) LED
+     'lpro' : '<div class="spinner"></div>',                    # HTML to display "processing" unknown status 
+     'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>', # HTML to display "Turn Off" button 
+     'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',  # HTML to display "Turn Off" button
+     'bpro' : '<div class="myButtonOff">Processing</div>'}      # HTML to display "processing" button (without any function)
+          
+}
+ '''
+
+Services = {
+    10 : {'name' : 'Proc ABC',
+          'fun' : process, 
+          'pfun1' : 'abc',
+          'pfun2' : None,
+          'pfun3' : '/usr/bin/sudo /etc/init.d/abc start',
+          'pfun4' : '/usr/bin/sudo /etc/init.d/abc stop',
+          'id' : 'gpio0',
+          'state' : 99,
+          'newstate' : 0,
+          'switch' : 1, 
+          'lon' : '<div class="led-green">ON</div>',
+          'loff' : '<div class="led-red">OFF</div>',
+          'lpro' : '<div class="spinner"></div>',
+          'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>',
+          'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',
+          'bpro' : '<div class="myButtonOff">Processing</div>'},
+    11 : {'name' : 'GPIO1',
+          'fun' : set_gpio,
+          'pfun1' : B_PIN,     
+          'pfun2' : None,   
+          'pfun3' : None, 
+          'pfun4' : None,
+          'id' : 'gpio1',  
+          'state' : 99, 
+          'newstate' : 0, 
+          'switch' : 1,
+          'lon' : '<div class="led-green">ON</div>', 
+          'loff' : '<div class="led-red">OFF</div>', 
+          'lpro' : '<div class="spinner"></div>', 
+          'bon' : '<a href="/11/off" class="myButton">Turn OFF</a>', 
+          'boff' : '<a href="/11/on" class="myButton">Turn ON</a>', 
+          'bpro' : '<div class="myButtonOff">Processing</div>'},
+    12 : {'name' : 'GPIO 3', 
+          'fun' : check_gpio, 
+          'pfun1' : C_PIN,  
+          'pfun2' : None, 
+          'pfun3' : None, 
+          'pfun4' : None,
+          'id' : 'gpio3',  
+          'state' : 99, 
+          'newstate' : 0, 
+          'switch' : 0,
+          'lon' : '<div class="led-green">ON</div>', 
+          'loff' : '<div class="led-red">OFF</div>', 
+          'lpro' : '<div class="spinner"></div>', 
+          'bon' : '', 
+          'boff' : '', 
+          'bpro' : '<div class="myButtonOff">Processing</div>'}
 }
 
+'''
+sse_param defines dictionary to be sent from HTML server site event process to web client   
+'''
 
+# This is fixed part of the sse_param, whihc is also hardcoded in the web index.html template  
 sse_parm = {               
             'time'       : time.strftime("%H:%M:%S",time.gmtime()),
             'date'       : time.strftime("%d.%m.%Y",time.gmtime()),
@@ -108,9 +177,11 @@ sse_parm = {
             'netr'       : "{:>8s}".format(bytes2human(0))
            }
 
+# This extends the sse_param dictionary, by creating entries for LED and Button parameters defined in the Service  
 for service in Services:
     sse_parm['LED_%s' % Services[service]['id']] = ''
     sse_parm['BUT_%s' % Services[service]['id']] = '' 
+
        
 # name - text to be displayed
 # state - to be displayed as a LED 
@@ -126,9 +197,7 @@ def sse_worker():
 
 def param_worker():
     global Services
-    global workernr
-    #workernr += 1
-    #workerlc = workernr
+    global sse_parm
     t0 = time.time()
     tot = net_io_counters()
     while True:
@@ -208,18 +277,15 @@ def index():
 @app.route("/<ServiceId>/<action>")
 def action(ServiceId, action):
     global Services
+    # to do validate service numbers and action based on Service dictionary
     # Convert the ServiceId from the URL into an integer:
     service = int(ServiceId)
-    # to do validate service numbers and action based on Service dictionary
-    # Get the device name for the pin being changed:
-    # If the action part of the URL is "on," execute the code indented below:
-    # Set the service pin high:
-    #GPIO.output(service, GPIO.HIGH)
     task = Services[service]['fun']
-    task(service, action)
-    templateData = {
-        'services' : Services
-   }
+    with sync:
+        task(service, action)
+#    templateData = {
+#        'services' : Services
+#   }
     #return render_template('index.html', **templateData)
     return redirect('/')
 
@@ -257,13 +323,6 @@ def stop():
 
 if __name__ == "__main__":
     
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(A_PIN, GPIO.OUT)
-    GPIO.setup(B_PIN, GPIO.OUT)
-    GPIO.setup(A_PIN, GPIO.IN)
-    
-    
     # Initial check of the services and setup main dictionary Services accordingly
     for s in Services:
         task  = Services[s]['fun']
@@ -282,4 +341,4 @@ if __name__ == "__main__":
     gevent.spawn(param_worker)
     http_server = WSGIServer(('', 5000), app)
     http_server.serve_forever()
-
+    
