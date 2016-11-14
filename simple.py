@@ -36,7 +36,7 @@ Services    = None          # dictionary with maintained services and or GPIO st
 
 A_PIN = 17 #GPIO0
 B_PIN = 27 #GPIO2
-C_PIN = 22 #GPIO3
+C_PIN = 22 #GPIO3 
 
 def check_gpio(service, x):
     return GPIO.input(Services[service]['pfun1'])==1
