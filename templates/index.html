@@ -286,6 +286,7 @@ function listen() {
     	
     source.onmessage = function(msg) {
       dic = JSON.parse(msg.data);
+      // console.log(dic['time']);
       for (var key in dic) {
           var target = document.getElementById(key);
           if (target != undefined) {

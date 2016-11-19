@@ -17,8 +17,6 @@ import settings
 from gevent.coros import Semaphore
 
 import RPi.GPIO as GPIO
-from relay import Relay
-
 
 sync = Semaphore()
 
@@ -34,27 +32,66 @@ app.use_reloader = False
 http_server = None          # http server object, needed to graceful shutdown the server
 Services    = None          # dictionary with maintained services and or GPIO statuses
 
-A_PIN = 17 #GPIO0
-B_PIN = 27 #GPIO2
-C_PIN = 22 #GPIO3 
+class myPIN(object):
+
+    def __init__(self, PIN, INOUT, STATUS=0):
+
+        self.Pin    = PIN
+        self.Status = STATUS
+        self.InOut  = INOUT
+        self.gpio   = GPIO
+        self.gpio.setwarnings(False)
+        self.gpio.setmode(GPIO.BCM)
+        if self.InOut == 'OUT':
+            self.gpio.setup(self.Pin, self.gpio.OUT)
+            self.Change(self.Status)
+        elif self.InOut == 'IN':
+            self.gpio.setup(self.Pin, self.gpio.IN)
+        else:
+            raise ValueError('Could not set GPIO %d to %s direction' % (self.Pin, self.InOut))
+    
+    def Change(self, STATUS):
+        if self.InOut == 'OUT':
+            if (STATUS == 0) or (STATUS == 1):
+                self.Status = STATUS
+                self.gpio.output(self.Pin, STATUS)
+            else: raise ValueError('Could not set GPIO %d to %d' % (self.Pin, STATUS))
+
+    def Check(self):
+        return self.gpio.input(self.Pin)
+
+    #workaround to close gpio in a proper way, function shall be called at exit 
+    def Exit(self):
+        self.gpio.cleanup()
+
+A_PIN = 27 #GPIO2
+B_PIN = 17 #GPIO3 
+    
+out01 = myPIN(A_PIN, 'OUT', 0)
+in01  = myPIN(B_PIN, 'IN')
+
+
 
 def check_gpio(service, x):
-    return GPIO.input(Services[service]['pfun1'])==1
+    return Services[service]['pfun1'].Check()
 
 def set_gpio(service, action):
     if action == 'off':
         Services[service]['state'] = 0                   # do not wait for feedback from the service, change cab be done immediately
         Services[service]['newstate'] = 0
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['loff']  
-        sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bon']          
-        GPIO.output(Services[service]['pfun1'], 0)        
+        sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['boff']          
+        Services[service]['pfun1'].Change(0)        
     elif action == 'on':
         Services[service]['state'] = 1                    # do not wait for feedback from the service, change cab be done immediately
         Services[service]['newstate'] = 1        
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lon'] 
-        sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['boff']          
-        GPIO.output(Services[service]['pfun1'], 1)
-    else: raise ValueError('Unknown action "%s"' % action)    
+        sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bon']          
+        Services[service]['pfun1'].Change(1)
+    elif action == 'status':
+        return Services[service]['pfun1'].Check()
+                
+    else: raise ValueError('Unknown action "%s" for service %d' % (action, service) )    
 
 def process(service, action):
     if action == 'off':
@@ -100,8 +137,8 @@ Services = {
      'lon' : '<div class="led-green">ON</div>',                 # HTML to display green (ON) LED
      'loff' : '<div class="led-red">OFF</div>',                 # HTML to display red (OFF) LED
      'lpro' : '<div class="spinner"></div>',                    # HTML to display "processing" unknown status 
-     'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>', # HTML to display "Turn Off" button 
-     'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',  # HTML to display "Turn Off" button
+     'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>', # HTML to display "Turn Off" button, the number must point at service number and off/on hast be a valid parameter
+     'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',  # HTML to display "Turn Off" button, the number must point at service number and off/on hast be a valid parameter
      'bpro' : '<div class="myButtonOff">Processing</div>'}      # HTML to display "processing" button (without any function)
           
 }
@@ -112,50 +149,50 @@ Services = {
           'fun' : process, 
           'pfun1' : 'abc',
           'pfun2' : None,
-          'pfun3' : '/usr/bin/sudo /etc/init.d/abc start',
-          'pfun4' : '/usr/bin/sudo /etc/init.d/abc stop',
-          'id' : 'gpio0',
+          'pfun3' : '/home/pi/web/abc start',
+          'pfun4' : '/home/pi/web/abc stop',
+          'id' : 'serviceABC',
           'state' : 99,
           'newstate' : 0,
           'switch' : 1, 
-          'lon' : '<div class="led-green">ON</div>',
+          'lon' :  '<div class="led-green">ON</div>',
           'loff' : '<div class="led-red">OFF</div>',
           'lpro' : '<div class="spinner"></div>',
-          'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>',
+          'bon' :  '<a href="/10/off" class="myButton">Turn OFF</a>',
           'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',
           'bpro' : '<div class="myButtonOff">Processing</div>'},
-    11 : {'name' : 'GPIO1',
+    11 : {'name' : 'Green',
           'fun' : set_gpio,
-          'pfun1' : B_PIN,     
+          'pfun1' : out01,     
           'pfun2' : None,   
           'pfun3' : None, 
           'pfun4' : None,
-          'id' : 'gpio1',  
+          'id' : 'out01',  
           'state' : 99, 
           'newstate' : 0, 
           'switch' : 1,
-          'lon' : '<div class="led-green">ON</div>', 
+          'lon' :  '<div class="led-green">ON</div>', 
           'loff' : '<div class="led-red">OFF</div>', 
           'lpro' : '<div class="spinner"></div>', 
-          'bon' : '<a href="/11/off" class="myButton">Turn OFF</a>', 
+          'bon' :  '<a href="/11/off" class="myButton">Turn OFF</a>', 
           'boff' : '<a href="/11/on" class="myButton">Turn ON</a>', 
           'bpro' : '<div class="myButtonOff">Processing</div>'},
-    12 : {'name' : 'GPIO 3', 
+    12 : {'name' : 'Switch', 
           'fun' : check_gpio, 
-          'pfun1' : C_PIN,  
+          'pfun1' : in01,  
           'pfun2' : None, 
           'pfun3' : None, 
           'pfun4' : None,
-          'id' : 'gpio3',  
+          'id' : 'in01',  
           'state' : 99, 
           'newstate' : 0, 
           'switch' : 0,
-          'lon' : '<div class="led-green">ON</div>', 
+          'lon' :  '<div class="led-green">ON</div>', 
           'loff' : '<div class="led-red">OFF</div>', 
           'lpro' : '<div class="spinner"></div>', 
           'bon' : '', 
           'boff' : '', 
-          'bpro' : '<div class="myButtonOff">Processing</div>'}
+          'bpro' : '<div class="myButtonOff">Processing</div>'}       
 }
 
 '''
@@ -193,7 +230,7 @@ def sse_worker():
     global sse_parm
     while True:
         yield 'data: ' + json.dumps(sse_parm) + '\n\n'       # push to the page
-        gevent.sleep(0.5)                                    # wait 1s for next check
+        gevent.sleep(1)                                    # wait 1s for next check
 
 def param_worker():
     global Services
@@ -205,7 +242,7 @@ def param_worker():
             # for all services check their status 
             for s in Services:
                 task  = Services[s]['fun']                                               # find which function is responsible for the given service
-                ServiceStat = task(s, 'status')                                          # do not change anything jusz check the status  
+                ServiceStat = task(s, 'status')                                          # do not change anything jusz check the status
                 if Services[s]['state'] == 99:                                           # there was a change of service status triggered within this application
                     if ServiceStat:                                                      # service is now running
                         if (Services[s]['newstate'] == 1):                               # the new 'desired' status was expected to be up and running/1
@@ -232,10 +269,7 @@ def param_worker():
         if time.time() - t0 > 4:    # do not update all statistics every second, let's wait 4 seconds for more smooth value
             t1 = time.time()
             
-            if param.RPI_Version is not None:
-                cpu_temperature = get_cpu_temperature()
-            else:
-                cpu_temperature = 0.0
+            cpu_temperature = get_cpu_temperature()
 
             net = net_io_counters()
             cur_sent = ((net.bytes_sent - tot.bytes_sent) / (t1-t0)) 
@@ -301,14 +335,6 @@ def shutdown():
     return '... Server shutting down'
 
 
-@app.route('/reboot')
-def reboot():
-    if param.RPI_Version is not None: #shutdown only for RPI
-        Popen(param.ShutdownScript)
-        http_server.stop()
-    return '<h1>... Server rebooting</h1>'
-
-
 #@app.route('/stream/', methods=['GET', 'POST'])
 @app.route('/stream/')
 def stream():
@@ -322,7 +348,6 @@ def stop():
     sys.exit(signal.SIGTERM) 
 
 if __name__ == "__main__":
-    
     # Initial check of the services and setup main dictionary Services accordingly
     for s in Services:
         task  = Services[s]['fun']
