@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from subprocess import Popen
 import settings
 from gevent.coros import Semaphore
+from itertools import cycle
 
 import RPi.GPIO as GPIO
 
@@ -101,7 +102,7 @@ def process(service, action):
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro']  
         sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
         
-        Popen(Services[service]['pfun4'], shell=True)      # and start the TVHeadOn service        
+        Popen(Services[service]['pfun4'], shell=True)      # and start the service        
     elif action == 'on':
         Services[service]['state'] = 99                    # wait for feedback from the service, do not change immediately
         Services[service]['newstate'] = 1        
@@ -145,12 +146,12 @@ Services = {
  '''
 
 Services = {
-    10 : {'name' : 'Proc ABC',
+    10 : {'name' : 'Red Blink',
           'fun' : process, 
-          'pfun1' : 'abc',
+          'pfun1' : 'testdaemon',
           'pfun2' : None,
-          'pfun3' : '/home/pi/web/abc start',
-          'pfun4' : '/home/pi/web/abc stop',
+          'pfun3' : '/home/pi/web/testdaemon.py start',
+          'pfun4' : '/home/pi/web/testdaemon.py stop',
           'id' : 'serviceABC',
           'state' : 99,
           'newstate' : 0,
@@ -161,7 +162,7 @@ Services = {
           'bon' :  '<a href="/10/off" class="myButton">Turn OFF</a>',
           'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',
           'bpro' : '<div class="myButtonOff">Processing</div>'},
-    11 : {'name' : 'Green',
+    11 : {'name' : 'Green LED',
           'fun' : set_gpio,
           'pfun1' : out01,     
           'pfun2' : None,   
@@ -204,6 +205,7 @@ sse_parm = {
             'time'       : time.strftime("%H:%M:%S",time.gmtime()),
             'date'       : time.strftime("%d.%m.%Y",time.gmtime()),
             'uptime'     : "{:d}:{:0>2d}:{:0>2d}:{:0>2d}".format(0, 0, 0, 0),
+            'heartbeat'  : "#ffffff",
             'cpup'       : "{:3.0f}%".format(0),
             'cput'       : "{:3.0f}*C".format(0),
             'ramp'       : "{:3.0f}%".format(0),
@@ -237,6 +239,16 @@ def param_worker():
     global sse_parm
     t0 = time.time()
     tot = net_io_counters()
+    colorlst = ['#ffffff', '#e6e6e6','#bfbfbf','#999999','#737373','#999999','#bfbfbf', '#e6e6e6']
+    colorlst = ['#e6e6e6', '#000000']
+    haertcolor = cycle(colorlst)
+    #http://www.w3schools.com/charsets/ref_utf_geometric.asp
+    haertlst = ['&#9680', '&#9683', '&#9681', '&#9682']
+    haertlst = ['&#9723', '&#9724']
+    haertlst = ['&#9673', '&#9711']
+    haertlst = ['&#9634', '&#9635']
+    haertlst = ['|', '/', '-', '\\']
+    haertbeat = cycle(haertlst)
     while True:
         with sync:
             # for all services check their status 
@@ -295,6 +307,7 @@ def param_worker():
         sse_parm['time']   = time.strftime("%H:%M:%S",time.gmtime())
         sse_parm['date']   = time.strftime("%d.%m.%Y",time.gmtime())
         sse_parm['uptime'] = "{:d}:{:0>2d}:{:0>2d}:{:0>2d}".format(uptime.day-1, uptime.hour, uptime.minute, uptime.second)
+        sse_parm['heartbeat'] = next(haertbeat) 
         
         gevent.sleep(1)                                                         # wait 1s for next check
 

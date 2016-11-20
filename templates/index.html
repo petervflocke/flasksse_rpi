@@ -246,7 +246,7 @@
         <div class="divTableCell1">Uptime</div>
         <div class="divTableCell2">:</div>
         <div class="divTableCell4"><div id="uptime"></div></div>
-        <div class="divTableCell4"></div>        
+        <div class="divTableCell4"><b id="heartbeat">-</b></div>        
       </div>
       <div class="divTableRow">
         <div class="divTableCell1">CPU, Temp</div>
@@ -290,7 +290,7 @@ function listen() {
       for (var key in dic) {
           var target = document.getElementById(key);
           if (target != undefined) {
-            target.innerHTML = dic[key];
+        	target.innerHTML = dic[key];
           }
       }
     }
