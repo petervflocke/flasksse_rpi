@@ -56,7 +56,15 @@ To start the web control app for tvheadend and oscam use command:
 	
 This can be started via ssh or directly on RPI
 
+
+This application answers at the raspberry pi IP address on port 5000.
+The link follows: http://raspberryip:5000/ where raspberryip=local ip of the RPI.
+In my case:
+
+![App access](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/httpaddress.png  "App acess")
+
 In this repository you can find one module more, which can be easily reused in other projects.
+***
 
 ### Goodies: Template for a WEB user interface
 You can reuse and tailor to your needs the main [sse.py](https://github.com/petervflocke/flasksse_rpi/blob/master/sse.py) application, however in this repository there is another example [simple.py](https://github.com/petervflocke/flasksse_rpi/blob/master/simple.py), which creates a template, one can easily modify and extend to control RPI, processes and or GPIOs.
@@ -66,8 +74,19 @@ In order to run this test, a simple test circuit is needed. It can be done on a 
 
 The test app in action can be checked on youtube: [![Youtube: RPI tvheadend Server](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/testboardpic.jpg  "Youtube: RPI tvheadend Server")](https://youtu.be/OJvUImDLIp4)
 
-####Configure, extend or modify (this example and the main see.py app)
+####Run, configure, extend or modify (this example and the main see.py app)
 
+The test web application  `simple.py`, which controlls `testdaemon.py service, one GPIO line and reads one GPIO , can be run as a pi user by:
+
+	sudo python ~/web/sse.py 
+
+or to leave the application running in bacground:
+
+	sudo python ~/web/sse.py > /dev/null 2>&1&
+
+This application answers at the raspberry pi IP address on port 5000.
+The link follows: http://raspberryip:5000/ where raspberryip=local ip of the RPI.
+&nbsp;
 In this example (and in the main sse.py app) there are two main files:
 - **simple.py**, which is responsible for the application logic and network communication
 - **template/index.html**, which is used to render the application page
@@ -77,6 +96,7 @@ In this example (and in the main sse.py app) there are two main files:
 > - `index.html` file must stay in a sub-folder `template` 
 > - Index.html does not need to be modify, as long as the predefined status fields (such as: time, date, uptime, haert beat, CPU load, CPU temp, free RAM, free disk space, and network utilisation) can stay on the page.
 > - Index.html does not need to be modify if you are going new GPIO lines or service switches
+
 &nbsp;
 
 Dictionary `Services` stores the main configuration and status control data structure.
@@ -217,6 +237,14 @@ The fixed RPI status screen part is rendered as a 4x6 table, also with respectiv
 ```
 Refer to below picture showing screen layout and respective dynamic, fixed and static parts 
 ![Screen Layout](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/htmllayout.png  "Screen layout")
+&nbsp;
+
+####testdaemon.py as a dummy test service
+>**Note**
+> &nbsp;
+> `testdaemon.py` runs as a service and turns on and off GPIO3 (BCM22) in an endless loop.
+> `testdaemon.py` must have executable access permissions
+
 &nbsp;
 
 ###Main web application configuration details
