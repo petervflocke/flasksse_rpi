@@ -112,12 +112,31 @@ Services = {
           'bpro' : '<div class="myButtonOff">Processing</div>'}       
 }
 ```
-See the source code for more details.
+See the source code for more implemenation details.
+
+Second dictionary `sse_parm` creates data exchange structure used to update all dynamic information on the page, via separate thread `sse_worker()` responsible for server side event process. The content of the `sse_parm` is regularly updated by `param_worker():` one thread for all `sse_parm`.
+```python
+sse_parm = {
+            'time'       :  '',
+            'date'       : '',
+            'uptime'     : '',
+            'heartbeat'  : '',
+            'cpup'       : '',
+            'cput'       : '',
+            'ramp'       : '',
+            'ramf'       : '',
+            'hddp'       : '',
+            'hddf'       : '',
+            'nets'       : '', 
+            'netr'       : '',
+           }
+```
+This structure consists of several fixed elements from the status. The dynamic GPIO/Service part defined in the `Service`dictionary has to be 
 
 
 >**Note**
 
-> 
+> Both application, the test one (simple.py) and sse.py (for tvhead and oscam)) uses the same index.html file to render the final application interface page.
 
 In the main loop 
 ```python

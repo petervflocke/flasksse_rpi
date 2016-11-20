@@ -169,12 +169,12 @@ Services = {
 sse_param defines dictionary to be sent from HTML server site event process to web client   
 '''
 
-# This is fixed part of the sse_param, whihc is also hardcoded in the web index.html template  
+# This is fixed part of the sse_param, which is also hardcoded in the web index.html template  
 sse_parm = {               
             'time'       : time.strftime("%H:%M:%S",time.gmtime()),
             'date'       : time.strftime("%d.%m.%Y",time.gmtime()),
             'uptime'     : "{:d}:{:0>2d}:{:0>2d}:{:0>2d}".format(0, 0, 0, 0),
-            'heartbeat'  : "#ffffff",
+            'heartbeat'  : "&nbsp;",
             'cpup'       : "{:3.0f}%".format(0),
             'cput'       : "{:3.0f}*C".format(0),
             'ramp'       : "{:3.0f}%".format(0),
