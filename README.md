@@ -73,9 +73,9 @@ In this example (and in the main sse.py app) there are two main files:
 
 >**Note**
 
-> `index.html` file must stay in a subfolder `template` 
-> Index.html does not need to be modify, as long as the predefined status fields (such as: time, date, uptime, haert beat, CPU load, CPU temp, free RAM, free disk space, and network utilisation) can stay on the page.
-> Index.html does not need to be modify if you are going new GPIO lines or service switches
+> -`index.html` file must stay in a subfolder `template` 
+> - Index.html does not need to be modify, as long as the predefined status fields (such as: time, date, uptime, haert beat, CPU load, CPU temp, free RAM, free disk space, and network utilisation) can stay on the page.
+> - Index.html does not need to be modify if you are going new GPIO lines or service switches
 &nbsp;
 
 
