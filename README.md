@@ -68,8 +68,8 @@ The test app in action can be checked on youtube: [![Youtube: RPI tvheadend Serv
 ####Configure, extend or modify (this example and the main see.py app)
 
 In this example (and in the main sse.py app) there are two main files:
-- simple.py, which is responsible for the application logic and network communication
-- template/index.html, which is used to render the application page
+- **simple.py**, which is responsible for the application logic and network communication
+- **template/index.html**, which is used to render the application page
 
 >**Note**
 > &nbsp;
@@ -78,14 +78,43 @@ In this example (and in the main sse.py app) there are two main files:
 > - Index.html does not need to be modify if you are going new GPIO lines or service switches
 &nbsp;
 
-
-
-
+Dictionary `Services` stores the main configuration and status control data structure.
+The Dictionary consists of service numbers to iterate through the service definitions. Service definition, another dictionary cosnsist of following  key: value pairs
 ```python
-A_PIN  = 17 #wiring=0 A pin on rotary
-B_PIN  = 27 #wiring=2 B pin on rotary 
-SW_PIN = 22 #wiring=3 press pin on rotary
+Services = {
+    10 : {'name' : 'Red Blink',                                         # Name to be displayed on web page
+          'fun' : process,                                              # Name of the function, which controls this service behavior (status, change, start, stop, etc 
+          'pfun1' : 'testdaemon',                                       # in this case it is a service, here is defined name of the service to be check on the puitls list
+          'pfun2' : None,                                               # not used, additional field, can be used as a second parameter or whatsoever
+          'pfun3' : '/home/pi/web/testdaemon.py start',                 # external command to start the service (can be for example a scritp or service binary file
+          'pfun4' : '/home/pi/web/testdaemon.py stop',                  # external command to stop the service
+          'id' : 'serviceABC',                                          # name of the html id to be incorporated into the index.html template, must be unique within this Services 
+          'state' : 99,                                                 # current status of the service 99 means unknown
+          'newstate' : 0,                                               # new desired status of the given service
+          'switch' : 1,                                                 # 1 means display the button to change the service status, 0 just display the service status (no change from this app
+          'lon' :  '<div class="led-green">ON</div>',                   # HTML to display green (ON) LED
+          'loff' : '<div class="led-red">OFF</div>',                    # HTML to display red (OFF) LED
+          'lpro' : '<div class="spinner"></div>',                       # HTML to display "processing" unknown status
+          'bon' :  '<a href="/10/off" class="myButton">Turn OFF</a>',   # HTML to display "Turn Off" button, the number must point at service number and off/on hast be a valid parameter
+          'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',     # HTML to display "Turn On" button, the number must point at service number and off/on hast be a valid parameter
+          'bpro' : '<div class="myButtonOff">Processing</div>'},        # HTML to display "processing" button (without any function)
+    11 : {'name' : 'Green LED',                                         # Next service
+          'fun' : set_gpio,                                             # different function to control service (in this case GPIO line) behavior
+          'pfun1' : out01,                                              # GPIO object
+          ...
+          ...
+          ...
+    12 : {'name' : 'Switch', 
+          'fun' : check_gpio,                                           # Another example of a GPIO line in "read only / input " mode 
+          ...
+          ...
+          ...
+          'bpro' : '<div class="myButtonOff">Processing</div>'}       
+}
 ```
+See the source code for more details.
+
+
 >**Note**
 
 > 

@@ -108,55 +108,32 @@ def process(service, action):                             # control start, stop 
             return Services[service]['pfun1'] in [p.name() for p in process_iter()]        
     else: raise ValueError('Unknown action "%s"' % action)  
 
+
 '''
 The main dictionary, which control all objects needed to create the web template and reaction to the button(s) on web page
 Example taken from the sse.py main application 
+Service definition for the test example
+'''
 Services = {
-    10: {'name' : 'TVHead', 'fun' : process, 'pfun1' : 'tvheadend', 'pfun2' : None,   'pfun3' : '/usr/bin/sudo /etc/init.d/tvheadend start', 'pfun4' : '/usr/bin/sudo /etc/init.d/tvheadend stop',
-          'id' : 'tvhead', 'state' : 99, 'newstate' : 0, 'switch' : 1, 
-          'lon' : '<div class="led-green">ON</div>', 'loff' : '<div class="led-red">OFF</div>', 'lpro' : '<div class="spinner"></div>', 'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>', 'boff' : '<a href="/10/on" class="myButton">Turn ON</a>', 'bpro' : '<div class="myButtonOff">Processing</div>'},
-    
-    10:                                                         # service ID number (int)
-    {'name' : 'TVHead',                                         # name to be displayed 
-     'fun' : process,                                           # name of the function to pro 
-     'pfun1' : 'tvheadend',                                     # 1st parameter for the 'fun' function
-     'pfun2' : None,                                            # 2nd parameter for the 'fun' function
-     'pfun3' : '/usr/bin/sudo /etc/init.d/tvheadend start',     # 3rd parameter here used an external command start the service
-     'pfun4' : '/usr/bin/sudo /etc/init.d/tvheadend stop',      # 4th parameter here used an external command stop the service
-     'id' : 'tvhead',                                           # name of the html id to be incorporated into the index.html template
-     'state' : 99,                                              # current status of the service 99 means unknown
-     'newstate' : 0,                                            # new desired status of the given service
-     'switch' : 1,                                              # 1 means display the button to change the service status, 0 just display the service status (no change from this app     
-     'lon' : '<div class="led-green">ON</div>',                 # HTML to display green (ON) LED
-     'loff' : '<div class="led-red">OFF</div>',                 # HTML to display red (OFF) LED
-     'lpro' : '<div class="spinner"></div>',                    # HTML to display "processing" unknown status 
-     'bon' : '<a href="/10/off" class="myButton">Turn OFF</a>', # HTML to display "Turn Off" button, the number must point at service number and off/on hast be a valid parameter
-     'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',  # HTML to display "Turn Off" button, the number must point at service number and off/on hast be a valid parameter
-     'bpro' : '<div class="myButtonOff">Processing</div>'}      # HTML to display "processing" button (without any function)
-          
-}
- '''
-# Service definition for the test example 
-Services = {
-    10 : {'name' : 'Red Blink',
-          'fun' : process, 
-          'pfun1' : 'testdaemon',
-          'pfun2' : None,
-          'pfun3' : '/home/pi/web/testdaemon.py start',
-          'pfun4' : '/home/pi/web/testdaemon.py stop',
-          'id' : 'serviceABC',
-          'state' : 99,
-          'newstate' : 0,
-          'switch' : 1, 
-          'lon' :  '<div class="led-green">ON</div>',
-          'loff' : '<div class="led-red">OFF</div>',
-          'lpro' : '<div class="spinner"></div>',
-          'bon' :  '<a href="/10/off" class="myButton">Turn OFF</a>',
-          'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',
-          'bpro' : '<div class="myButtonOff">Processing</div>'},
-    11 : {'name' : 'Green LED',
-          'fun' : set_gpio,
-          'pfun1' : out01,     
+    10 : {'name' : 'Red Blink',                                         # Name to be displayed on web page
+          'fun' : process,                                              # Name of the function, which controls this service behavior (status, change, start, stop, etc 
+          'pfun1' : 'testdaemon',                                       # in this case it is a service, here is defined name of the service to be check on the puitls list
+          'pfun2' : None,                                               # not used, additional field, can be used as a second parameter or whatsoever
+          'pfun3' : '/home/pi/web/testdaemon.py start',                 # external command to start the service (can be for example a scritp or service binary file
+          'pfun4' : '/home/pi/web/testdaemon.py stop',                  # external command to stop the service
+          'id' : 'serviceABC',                                          # name of the html id to be incorporated into the index.html template, must be unique within this Services 
+          'state' : 99,                                                 # current status of the service 99 means unknown
+          'newstate' : 0,                                               # new desired status of the given service
+          'switch' : 1,                                                 # 1 means display the button to change the service status, 0 just display the service status (no change from this app
+          'lon' :  '<div class="led-green">ON</div>',                   # HTML to display green (ON) LED
+          'loff' : '<div class="led-red">OFF</div>',                    # HTML to display red (OFF) LED
+          'lpro' : '<div class="spinner"></div>',                       # HTML to display "processing" unknown status
+          'bon' :  '<a href="/10/off" class="myButton">Turn OFF</a>',   # HTML to display "Turn Off" button, the number must point at service number and off/on hast be a valid parameter
+          'boff' : '<a href="/10/on" class="myButton">Turn ON</a>',     # HTML to display "Turn On" button, the number must point at service number and off/on hast be a valid parameter
+          'bpro' : '<div class="myButtonOff">Processing</div>'},        # HTML to display "processing" button (without any function)
+    11 : {'name' : 'Green LED',                                         # Next service
+          'fun' : set_gpio,                                             # different function to control service (in this case GPIO line) behavior
+          'pfun1' : out01,                                              # GPIO object
           'pfun2' : None,   
           'pfun3' : None, 
           'pfun4' : None,
@@ -171,7 +148,7 @@ Services = {
           'boff' : '<a href="/11/on" class="myButton">Turn ON</a>', 
           'bpro' : '<div class="myButtonOff">Processing</div>'},
     12 : {'name' : 'Switch', 
-          'fun' : check_gpio, 
+          'fun' : check_gpio,                                           # Another example of a GPIO line in "read only / input " mode 
           'pfun1' : in01,  
           'pfun2' : None, 
           'pfun3' : None, 
