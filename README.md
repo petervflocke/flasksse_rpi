@@ -58,7 +58,7 @@ This can be started via ssh or directly on RPI
 In this repository you can find one module more, which can be easily resused in other projects.
 
 ### Goodies: Template for a WEB user interface
-You can reuse and tailor to your needs the main `sse.py` application, however in this repository there is another example [simple.py](https://github.com/petervflocke/flasksse_rpi/blob/master/simple.py) simple.py, which creates a template, one can easily modify and extend to controll RPI, processes and or GPIOs.
+You can reuse and tailor to your needs the main [sse.py](https://github.com/petervflocke/flasksse_rpi/blob/master/sse.py) sse.py application, however in this repository there is another example [simple.py](https://github.com/petervflocke/flasksse_rpi/blob/master/simple.py) simple.py, which creates a template, one can easily modify and extend to controll RPI, processes and or GPIOs.
 
 In order to run this test a simple test circuit is needed. It can be done on a breadboard and shall follow below circuit schema:
 ![Test Board](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/testboard.png  "Test Board")
