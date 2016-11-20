@@ -1,19 +1,14 @@
-import sys
-import gevent
+import sys, time, signal, gevent
 from gevent.pywsgi import WSGIServer
 from gevent import monkey
-from talloc import total_blocks
 monkey.patch_all()
-from flask import Flask, json, request, render_template, render_template_string, redirect, url_for, Response
-import time
-import signal
+from flask import Flask, json, render_template, redirect, Response
 from myutil import get_cpu_temperature, bytes2human
 from psutil import process_iter, version_info, net_io_counters, cpu_percent, virtual_memory, disk_usage
 if version_info[0] >= 4:
     from psutil import boot_time            
 from datetime import datetime, timedelta
 from subprocess import Popen
-import settings
 from gevent.coros import Semaphore
 from itertools import cycle
 
@@ -23,7 +18,7 @@ sync = Semaphore()
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logging.basicConfig(level=logging.CRITICAL)
+#logging.basicConfig(level=logging.CRITICAL)
 
 
 app = Flask(__name__)
@@ -33,7 +28,7 @@ app.use_reloader = False
 http_server = None          # http server object, needed to graceful shutdown the server
 Services    = None          # dictionary with maintained services and or GPIO statuses
 
-class myPIN(object):
+class myPIN(object):        # define classes to read and set GPIO lines
 
     def __init__(self, PIN, INOUT, STATUS=0):
 
@@ -68,48 +63,43 @@ class myPIN(object):
 A_PIN = 27 #GPIO2
 B_PIN = 17 #GPIO0 
     
-out01 = myPIN(A_PIN, 'OUT', 0)
-in01  = myPIN(B_PIN, 'IN')
+out01 = myPIN(A_PIN, 'OUT', 0)      # define out GPIO line to control green led
+in01  = myPIN(B_PIN, 'IN')          # define in GPIO line to read the switch status
 
-
-
-def check_gpio(service, x):
+def check_gpio(service, x):         # simple line check function
     return Services[service]['pfun1'].Check()
 
-def set_gpio(service, action):
+def set_gpio(service, action):      # full gpio control
+    # only off, on and status as a action is accepted
     if action == 'off':
-        Services[service]['state'] = 0                   # do not wait for feedback from the service, change cab be done immediately
+        Services[service]['state'] = 0                 
         Services[service]['newstate'] = 0
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['loff']  
         sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['boff']          
-        Services[service]['pfun1'].Change(0)        
+        Services[service]['pfun1'].Change(0)        # reference to GPIO object defined in the 'service' dictionary see below  
     elif action == 'on':
-        Services[service]['state'] = 1                    # do not wait for feedback from the service, change cab be done immediately
+        Services[service]['state'] = 1                 
         Services[service]['newstate'] = 1        
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lon'] 
         sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bon']          
-        Services[service]['pfun1'].Change(1)
+        Services[service]['pfun1'].Change(1)        # reference to GPIO object defined in the 'service' dictionary see below
     elif action == 'status':
-        return Services[service]['pfun1'].Check()
+        return Services[service]['pfun1'].Check()   # reference to GPIO object defined in the 'service' dictionary see below
                 
     else: raise ValueError('Unknown action "%s" for service %d' % (action, service) )    
 
-def process(service, action):
+def process(service, action):                             # control start, stop and status of a external service running on RPI
     if action == 'off':
         Services[service]['state'] = 99                   # wait for feedback from the service, do not change immediately
         Services[service]['newstate'] = 0
-        
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro']  
         sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
-        
         Popen(Services[service]['pfun4'], shell=True)      # and start the service        
     elif action == 'on':
         Services[service]['state'] = 99                    # wait for feedback from the service, do not change immediately
         Services[service]['newstate'] = 1        
-
         sse_parm['LED_%s' % Services[service]['id']] = Services[service]['lpro'] 
         sse_parm['BUT_%s' % Services[service]['id']] = Services[service]['bpro']          
-        
         Popen(Services[service]['pfun3'], shell=True)      # and start the TVHeadOn service
     elif action == 'status':
         if version_info[0] < 4:
@@ -119,6 +109,8 @@ def process(service, action):
     else: raise ValueError('Unknown action "%s"' % action)  
 
 '''
+The main dictionary, which control all objects needed to create the web template and reaction to the button(s) on web page
+Example taken from the sse.py main application 
 Services = {
     10: {'name' : 'TVHead', 'fun' : process, 'pfun1' : 'tvheadend', 'pfun2' : None,   'pfun3' : '/usr/bin/sudo /etc/init.d/tvheadend start', 'pfun4' : '/usr/bin/sudo /etc/init.d/tvheadend stop',
           'id' : 'tvhead', 'state' : 99, 'newstate' : 0, 'switch' : 1, 
@@ -144,7 +136,7 @@ Services = {
           
 }
  '''
-
+# Service definition for the test example 
 Services = {
     10 : {'name' : 'Red Blink',
           'fun' : process, 

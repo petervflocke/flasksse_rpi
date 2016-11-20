@@ -58,14 +58,28 @@ This can be started via ssh or directly on RPI
 In this repository you can find one module more, which can be easily resused in other projects.
 
 ### Goodies: Template for a WEB user interface
-You can reuse and tailor to your needs the main [sse.py](https://github.com/petervflocke/flasksse_rpi/blob/master/sse.py) sse.py application, however in this repository there is another example [simple.py](https://github.com/petervflocke/flasksse_rpi/blob/master/simple.py) simple.py, which creates a template, one can easily modify and extend to controll RPI, processes and or GPIOs.
+You can reuse and tailor to your needs the main [sse.py](https://github.com/petervflocke/flasksse_rpi/blob/master/sse.py) application, however in this repository there is another example [simple.py](https://github.com/petervflocke/flasksse_rpi/blob/master/simple.py), which creates a template, one can easily modify and extend to controll RPI, processes and or GPIOs.
 
-In order to run this test a simple test circuit is needed. It can be done on a breadboard and shall follow below circuit schema:
+In order to run this test, a simple test circuit is needed. It can be done on a breadboard and shall follow below circuit schema:
 ![Test Board](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/testboard.png  "Test Board")
 
 The test app in action can be checked on youtube: [![Youtube: RPI tvheadend Server](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/testboardpic.jpg  "Youtube: RPI tvheadend Server")](https://youtu.be/OJvUImDLIp4)
 
-Provided example controls via web page 
+####Configure, extend or modify (this example and the main see.py app)
+
+In this example (and in the main sse.py app) there are two main files:
+- simple.py, which is responsible for the application logic and network communication
+- template/index.html, which is used to render the application page
+
+>**Note**
+
+> `index.html` file must stay in a subfolder `template` 
+> Index.html does not need to be modify, as long as the predefined status fields (such as: time, date, uptime, haert beat, CPU load, CPU temp, free RAM, free disk space, and network utilisation) can stay on the page.
+> Index.html does not need to be modify if you are going new GPIO lines or service switches
+&nbsp;
+
+
+
 
 ```python
 A_PIN  = 17 #wiring=0 A pin on rotary
