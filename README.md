@@ -48,6 +48,7 @@ ones done as the pi user run:
 
 	cd ~
 	clone https://github.com/petervflocke/flasksse_rpi web
+	chmod 755 web/myreboot.sh web/testdaemon.py
 
 To start the web control app for tvheadend and oscam use command:
 
@@ -114,7 +115,7 @@ Services = {
 ```
 See the source code for more implementation details, especially if the GPIO controlling part reflects your needs.
 
-In order to add a new service a complete dictionary structure has to be added and defined accordingly. Almost all "None" has to be replaced 
+In order to add a new service a complete dictionary structure has to be added and defined accordingly. Almost all "None" have to be replaced 
 ```python
 	ServiceID:
          {'name'     : None, 
@@ -155,7 +156,8 @@ sse_parm = {
             'netr'       : '',	# Net incoming bandwidth
            }
 ```
-This structure consists of several elements from the fixed RPI status part. The dynamic GPIO/Service part defined in the `Service`dictionary has to be added now (or later during the update). 
+- This structure consists of several elements from the fixed RPI status part.
+- The dynamic GPIO/Service part defined in the `Service`dictionary has to be added now (or later during the update). 
 
 
 >**Note**
@@ -163,7 +165,10 @@ This structure consists of several elements from the fixed RPI status part. The 
 > Both application, the test one (simple.py) and sse.py (for tvhead and oscam)) uses the same index.html file to render the final application interface page.
 
 Index html file does not use any graphical file. Check the css definition for different control symbols (LED, processing, etc). 
-The file has a dynamic part rendered using (Flask)[http://flask.pocoo.org/] render_template method the (Jinja)[http://jinja.pocoo.org/] templating system. The HTML body part has two parts. The dynamic part created via `Services` dictionary and the "fixed" part with RPI status info. If the status is not needed can be removed from the html file and `sse_param' definition accordingly.    
+The file has a dynamic part rendered using [Flask](http://flask.pocoo.org/)  render_template method the [inja](http://jinja.pocoo.org/) templating system.
+The HTML body part has two parts:
+- the dynamic part created via `Services` dictionary and
+- the "fixed" part with RPI status info. If the status is not needed can be removed from the html file and `sse_param` definition accordingly. 
 
 The dynamic part has a table structure 3 columns x n rows, where number of rows reflect the number of services to be controlled
 ```html
@@ -172,24 +177,24 @@ The dynamic part has a table structure 3 columns x n rows, where number of rows 
         <div class="divTableCell1">{{ services[s].name }}</div>
         <div class="divTableCell2">
           <div id="LED_{{ services[s].id }}" class="led-box">
-			  {% if services[s].state == 1 %}          
+			  {% if services[s].state == 1 %}
 	  				<div class="led-green">ON</div>
 	  		  {% elif services[s].state == 0 %}
 					<div class="led-red">OFF</div>          
 	  		  {% else %}
-	               <div class="spinner"></div>  
+	               <div class="spinner"></div> 
 	  		  {% endif %}
           </div>
         </div>
 		{% if services[s].switch == 1 %}
 		  <div id="BUT_{{ services[s].id }}" class="divTableCell3">
-			  {% if services[s].state == 1 %}          
-	  				<a id="bt{{s}}" href="/{{s}}/off" class="myButton">Turn OFF</a>      
+			  {% if services[s].state == 1 %} 
+	  				<a id="bt{{s}}" href="/{{s}}/off" class="myButton">Turn OFF</a> 
 	  		  {% elif services[s].state == 0 %}
 					<a id="bt{{s}}" href="/{{s}}/on" class="myButton">Turn ON</a>          
 	  		  {% else %}
-	               <div class="myButtonOff">Processing</div>  
-	  		  {% endif %}      
+	               <div class="myButtonOff">Processing</div> 
+	  		  {% endif %} 
           </div>
     	{% else %}
           <div id="BUT_None" class="divTableCell3">&nbsp;</div>
@@ -198,7 +203,7 @@ The dynamic part has a table structure 3 columns x n rows, where number of rows 
 {% endfor %}
 ```
 All objects to be updated via Server Side Events process are getting unique IDs from the `Service`dictionary. 
-The fixed RPI status screen part is rendered as a 4x6 table, also with respective IDs   
+The fixed RPI status screen part is rendered as a 4x6 table, also with respective IDs.
 
 ```html
   <div class="divTable">
@@ -209,21 +214,27 @@ The fixed RPI status screen part is rendered as a 4x6 table, also with respectiv
         <div class="divTableCell4"><div id="time"></div></div>
         <div class="divTableCell4"><div id="date"></div></div>
 ...
+```
 Refer to below picture showing screen layout and respective dynamic, fixed and static parts 
 ![Screen Layout](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/htmllayout.png  "Screen layout")
+&nbsp;
+
+###Main web application configuration details
+The main web application  `see.py`, which controlls the tvheadend and oscam services, can be run as a pi user by:
+
+	sudo python ~/web/sse.py 
+
+or to leave the application running in bacground:
+
+	sudo python ~/web/sse.py > /dev/null 2>&1&
 
 
-
-###Main graphical application configuration details
-The main graphical application  `main.py`, which controlls the tvheadend and oscam services, can be run as a pi user by:
-
-	sudo python ~/menu/main.py 
-
-####Application configuration:
+####see.py application configuration:
 
 In the file `settings.py`following parameters can be configured:
 
 ```python
 
 ```
-Check the comments for details.
+
+**... to be continued**
