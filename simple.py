@@ -66,7 +66,7 @@ class myPIN(object):
         self.gpio.cleanup()
 
 A_PIN = 27 #GPIO2
-B_PIN = 17 #GPIO3 
+B_PIN = 17 #GPIO0 
     
 out01 = myPIN(A_PIN, 'OUT', 0)
 in01  = myPIN(B_PIN, 'IN')
@@ -243,11 +243,12 @@ def param_worker():
     colorlst = ['#e6e6e6', '#000000']
     haertcolor = cycle(colorlst)
     #http://www.w3schools.com/charsets/ref_utf_geometric.asp
-    haertlst = ['&#9680', '&#9683', '&#9681', '&#9682']
-    haertlst = ['&#9723', '&#9724']
-    haertlst = ['&#9673', '&#9711']
+    #haertlst = ['&#9680', '&#9683', '&#9681', '&#9682']
+    #haertlst = ['&#9711', '&#9678', '&#9673', '&#9679']
+    #haertlst = ['&#9723', '&#9724']
+    #haertlst = ['&#9673', '&#9711']
     haertlst = ['&#9634', '&#9635']
-    haertlst = ['|', '/', '-', '\\']
+    #haertlst = ['|', '/', '-', '\\']
     haertbeat = cycle(haertlst)
     while True:
         with sync:

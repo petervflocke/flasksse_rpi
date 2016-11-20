@@ -26,10 +26,10 @@ class testdaemon(daemon.Daemon):
 daemon = testdaemon()
 
 if 'start' == sys.argv[1]:
-    time.sleep(10)
-    daemon.start()
+    time.sleep(10)              # Delay the start of the daemon to show processing time for turning the service on 
+    daemon.start()              
 elif 'stop' == sys.argv[1]:
-    time.sleep(5)
+    time.sleep(5)               # Delay service stop to show processing time
     daemon.stop()
 elif 'restart' == sys.argv[1]:
     daemon.restart()
