@@ -2,7 +2,7 @@
 
 The main idea is to create an app and template for a web page, which provides a continuous feedback on RPI status and allows to control running processes and GPIO lines. The template shall be easy to modify to adapt it to any RPI application. As this application is fully web-enabled it can be operated from any browser - also including mobile devices, without necessary to program a single line code on a mobile client. No need to learn android or iOS :) coding. 
 
-###Content:
+### Content:
 - Complete application to control tvheadserver and oscam servers via a web page (also on mobile)
 - Test program to show how to reuse the concept for an own interface
 &nbsp;
@@ -14,7 +14,7 @@ The main idea is to create an app and template for a web page, which provides a 
 
 &nbsp;
 &nbsp;
-###Install
+### Install
 
 
 >**Note**
@@ -74,7 +74,7 @@ In order to run this test, a simple test circuit is needed. It can be done on a 
 
 The test app in action can be checked on youtube: [![Youtube: RPI tvheadend Server](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/testboardpic.jpg  "Youtube: RPI tvheadend Server")](https://youtu.be/OJvUImDLIp4)
 
-####Run, configure, extend or modify (this example and the main see.py app)
+#### Run, configure, extend or modify (this example and the main see.py app)
 
 The test web application  `simple.py`, which controlls `testdaemon.py service, one GPIO line and reads one GPIO , can be run as a pi user by:
 
@@ -239,7 +239,7 @@ Refer to below picture showing screen layout and respective dynamic, fixed and s
 ![Screen Layout](https://raw.githubusercontent.com/petervflocke/rpitvheadend/master/res/htmllayout.png  "Screen layout")
 &nbsp;
 
-####testdaemon.py as a dummy test service
+#### testdaemon.py as a dummy test service
 >**Note**
 > &nbsp;
 > `testdaemon.py` runs as a service and turns on and off GPIO3 (BCM22) in an endless loop.
@@ -247,7 +247,7 @@ Refer to below picture showing screen layout and respective dynamic, fixed and s
 
 &nbsp;
 
-###Main web application configuration details
+### Main web application configuration details
 The main web application  `see.py`, which controlls the tvheadend and oscam services, can be run as a pi user by:
 
 	sudo python ~/web/sse.py 
@@ -257,7 +257,7 @@ or to leave the application running in bacground:
 	sudo python ~/web/sse.py > /dev/null 2>&1&
 
 
-####see.py application configuration:
+#### see.py application configuration:
 
 In the file `settings.py`following parameters can be configured:
 
